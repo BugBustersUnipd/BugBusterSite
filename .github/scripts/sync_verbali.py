@@ -138,8 +138,8 @@ def main():
     capitolato_html = process_simple_folder_content("SCELTA CAPITOLATO")
     update_index_file("<!-- START_CAPITOLATO -->", "<!-- END_CAPITOLATO -->", capitolato_html)
 
-    # 3. Processa Norme
-    norme_html = process_simple_folder_content("NORME")
+    # 3. Processa Norme (cartella corretta: NORME DI PROGETTO)
+    norme_html = process_simple_folder_content("NORME DI PROGETTO")
     update_index_file("<!-- START_NORME -->", "<!-- END_NORME -->", norme_html)
 
     # 4. Processa Verbali Interni
