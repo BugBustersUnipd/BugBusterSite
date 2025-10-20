@@ -1,61 +1,98 @@
 import os
-import requests
+import shutil
 import re
 
 # --- CONFIGURAZIONE ---
-TOKEN = os.environ.get("DOCS_PAT")
-REPO_OWNER = "BugbustersUnipd"
-REPO_NAME = "DocumentazioneSWE"
-INDEX_FILE = "index.html"
-# --------------------
+SOURCE_REPO_PATH = "private_docs_repo"
+WEBSITE_DOCS_PATH = "docs"
+INDEX_FILE_PATH = os.path.join(WEBSITE_DOCS_PATH, "index.html")
+TARGET_ASSETS_DIR = os.path.join(WEBSITE_DOCS_PATH, "verbali_autogen")
+# --- FINE CONFIGURAZIONE ---
 
-HEADERS = {
-    "Authorization": f"token {TOKEN}",
-    "Accept": "application/vnd.github.v3+json"
-}
+def update_index_file(placeholder_start, placeholder_end, html_content):
+    """
+    Legge index.html e sostituisce il placeholder con il nuovo HTML.
+    USA count=1 PER PREVENIRE DUPLICAZIONI.
+    """
+    if not html_content:
+        html_content = "<p>Nessun verbale trovato.</p>"
 
-def get_folders(api_url):
-    """Prende la lista di cartelle da un URL API di GitHub."""
-    response = requests.get(api_url, headers=HEADERS)
-    response.raise_for_status() # Lancia un errore se la richiesta fallisce
-    items = response.json()
-    # Filtra solo per le cartelle (type 'dir')
-    return [item for item in items if item.get("type") == "dir"]
+    try:
+        with open(INDEX_FILE_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
 
-def get_pdf_in_folder(folder_item):
-    """Cerca un PDF dentro una cartella e restituisce nome e link."""
-    folder_url = folder_item.get("url")
-    if not folder_url:
-        return None, None
+        # Regex per trovare il blocco
+        pattern = re.compile(f"({re.escape(placeholder_start)})(.*?)({re.escape(placeholder_end)})", re.DOTALL)
         
-    response = requests.get(folder_url, headers=HEADERS)
-    response.raise_for_status()
-    files = response.json()
+        # Costruisci il blocco sostitutivo
+        replacement_block = f"\\1\n{html_content}\n                        \\3"
+
+        if pattern.search(content) is None:
+            print(f"ERRORE: Placeholder {placeholder_start} non trovato in {INDEX_FILE_PATH}. Non aggiorno nulla.")
+            return
+
+        # ==========================================================
+        # ECCO LA MODIFICA CHIAVE: count=1
+        # Sostituisce solo la *prima* occorrenza trovata.
+        new_content = pattern.sub(replacement_block, content, count=1)
+        # ==========================================================
+
+        # Controllo di sicurezza: avvisa se trova altri placeholder
+        if pattern.search(new_content):
+             print(f"ATTENZIONE: Trovati placeholder duplicati per {placeholder_start} in index.html. "
+                   f"Sostituito solo il primo. Il file index.html va pulito manualmente.")
+
+        with open(INDEX_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"Aggiornato {placeholder_start} in {INDEX_FILE_PATH} (sostituito 1 blocco)")
     
-    for file in files:
-        if file.get("type") == "file" and file.get("name", "").endswith(".pdf"):
-            # Trovato! Restituiamo il link alla pagina web del file e il nome
-            return file.get("html_url"), file.get("name")
-            
-    return None, None
+    except Exception as e:
+        print(f"Errore durante l'aggiornamento di {INDEX_FILE_PATH}: {e}")
 
-def build_html_for_folders(folders):
-    """Costruisce il blocco HTML per la lista di cartelle e PDF."""
+def process_verbali(source_path, type_name):
+    """
+    Copia le cartelle dei verbali e genera l'HTML.
+    """
     html_output = ""
-    if not folders:
-        return None # Non modifichiamo nulla se non troviamo cartelle
+    
+    if not os.path.exists(source_path):
+        print(f"Cartella sorgente non trovata: {source_path}")
+        return ""
 
-    for folder in folders:
-        folder_name = folder.get("name")
-        pdf_link, pdf_name = get_pdf_in_folder(folder)
+    # Ordina le cartelle per nome, così appaiono in ordine
+    try:
+        folder_list = sorted(os.listdir(source_path))
+    except Exception:
+        folder_list = []
+
+    for folder_name in folder_list:
+        source_folder_path = os.path.join(source_path, folder_name)
         
-        if not pdf_link or not pdf_name:
-            continue # Salta questa cartella se non c'è un PDF omonimo
+        if os.path.isdir(source_folder_path):
+            try:
+                # 1. Copia l'intera cartella
+                target_folder_path = os.path.join(TARGET_ASSETS_DIR, type_name, folder_name)
+                # copytree fallisce se la cartella esiste già, la rimuoviamo prima per sicurezza
+                if os.path.exists(target_folder_path):
+                    shutil.rmtree(target_folder_path)
+                shutil.copytree(source_folder_path, target_folder_path)
 
-        # Crea un ID unico per il JS, es. "verbale-20-10-2024"
-        data_folder_id = f"verbale-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
+                # 2. Trova il PDF
+                pdf_name = None
+                for file in os.listdir(target_folder_path):
+                    if file.lower().endswith(".pdf"):
+                        pdf_name = file
+                        break
+                
+                if not pdf_name:
+                    print(f"Nessun PDF trovato in {target_folder_path}")
+                    continue
 
-        html_output += f"""
+                # 3. Costruisci il link RELATIVO
+                link_href = f"verbali_autogen/{type_name}/{folder_name}/{pdf_name}"
+                data_folder_id = f"verbale-{type_name.lower()}-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
+
+                html_output += f"""
                         <div class="subfolder">
                             <div class="folder-header" data-folder="{data_folder_id}">
                                 <h4><span class="folder-icon">📁</span> {folder_name}</h4>
@@ -64,7 +101,7 @@ def build_html_for_folders(folders):
                             <div class="folder-content" id="{data_folder_id}-content">
                                 <ul>
                                     <li>
-                                        <a href="{pdf_link}" target="_blank">
+                                        <a href="{link_href}" target="_blank">
                                             <span class="file-icon">📄</span> {pdf_name}
                                         </a>
                                     </li>
@@ -72,52 +109,28 @@ def build_html_for_folders(folders):
                             </div>
                         </div>
 """
+            except Exception as e:
+                print(f"Errore processando {source_folder_path}: {e}")
+                
     return html_output
 
-def update_index_file(placeholder_start, placeholder_end, html_content):
-    """Legge index.html e sostituisce il placeholder con il nuovo HTML."""
-    if html_content is None:
-        print(f"Nessun contenuto da aggiornare per {placeholder_start}, lascio il placeholder di default.")
-        return
-
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    # Regex per trovare il contenuto TRA i placeholder
-    pattern = re.compile(f"({re.escape(placeholder_start)})(.*?)({re.escape(placeholder_end)})", re.DOTALL)
-    
-    # Sostituisce il contenuto, mantenendo i placeholder
-    new_content = pattern.sub(f"\\1\n{html_content}\n                        \\3", content)
-
-    with open(INDEX_FILE, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    print(f"Aggiornato {placeholder_start} in {INDEX_FILE}")
-
-
 def main():
-    if not TOKEN:
-        print("Errore: Token DOCS_PAT non trovato. Assicurati sia nei Secrets.")
-        return
-
-    # --- Processa Verbali Interni ---
+    # Pulisci e ricrea la cartella di destinazione dei PDF
+    if os.path.exists(TARGET_ASSETS_DIR):
+        shutil.rmtree(TARGET_ASSETS_DIR)
+    os.makedirs(TARGET_ASSETS_DIR, exist_ok=True)
+    
+    # Processa Verbali Interni
     print("Processo Verbali Interni...")
-    api_interni_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/VERBALI/Interni"
-    try:
-        interni_folders = get_folders(api_interni_url)
-        interni_html = build_html_for_folders(interni_folders)
-        update_index_file("", "", interni_html)
-    except Exception as e:
-        print(f"Errore processando verbali interni: {e}")
+    source_interni = os.path.join(SOURCE_REPO_PATH, "VERBALI", "Interni")
+    interni_html = process_verbali(source_interni, "Interni")
+    update_index_file("", "", interni_html)
 
-    # --- Processa Verbali Esterni ---
+    # Processa Verbali Esterni
     print("Processo Verbali Esterni...")
-    api_esterni_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/VERBALI/Esterni"
-    try:
-        esterni_folders = get_folders(api_esterni_url)
-        esterni_html = build_html_for_folders(esterni_folders)
-        update_index_file("", "", esterni_html)
-    except Exception as e:
-        print(f"Errore processando verbali esterni: {e}")
+    source_esterni = os.path.join(SOURCE_REPO_PATH, "VERBALI", "Esterni")
+    esterni_html = process_verbali(source_esterni, "Esterni")
+    update_index_file("", "", esterni_html)
 
 if __name__ == "__main__":
     main()
