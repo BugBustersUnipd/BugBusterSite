@@ -1,0 +1,46 @@
+name: Sync Verbali Docs
+
+# Trigger:
+on:
+  # 1. Trigger Manuale (lo teniamo per sicurezza)
+  workflow_dispatch:
+  
+  # 2. Trigger Remoto (riceve il segnale da DocumentazioneSWE)
+  repository_dispatch:
+    types: [update-verbali] # Deve corrispondere all'event-type dello Step 3
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write # Dà il permesso all'azione di fare commit
+
+    steps:
+      # 1. Fa il "checkout" del codice di BugBusterSite
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Installa Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3. Installa le librerie Python necessarie
+      - name: Install dependencies
+        run: pip install requests
+
+      # 4. Esegue lo script Python
+      - name: Run Sync Script
+        env:
+          DOCS_PAT: ${{ secrets.DOCS_PAT }} # Inietta il token segreto
+        run: python .github/scripts/sync_verbali.py
+
+      # 5. Fa il commit automatico delle modifiche a index.html
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'CI: Aggiorna lista verbali'
+          # Committa solo se index.html è stato modificato
+          file_pattern: index.html

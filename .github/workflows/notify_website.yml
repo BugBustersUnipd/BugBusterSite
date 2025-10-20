@@ -1,0 +1,21 @@
+name: Notify Website of Verbali Update
+
+on:
+  push:
+    # Si attiva solo per modifiche dentro la cartella VERBALI
+    paths:
+      - 'VERBALI/**'
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send update signal to BugBusterSite
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          # Il token che abbiamo creato e salvato nei secrets
+          token: ${{ secrets.DOCS_PAT }}
+          # Il repository che deve ricevere il segnale (il tuo sito)
+          repository: BugbustersUnipd/BugBusterSite
+          # Un nome per l'evento, che useremo nell'altro file
+          event-type: update-verbali
