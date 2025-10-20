@@ -1,24 +1,24 @@
-name: Sync Verbali Docs
+name: Sync Project Docs
 
-# Trigger:
 on:
-  # 1. Trigger Manuale (lo teniamo per sicurezza)
+  # Per avviarlo a mano dal tab "Actions"
   workflow_dispatch:
   
-  # 2. Trigger Remoto (riceve il segnale da DocumentazioneSWE)
-  repository_dispatch:
-    types: [update-verbali] # Deve corrispondere all'event-type dello Step 3
+  # Ogni volta che fai push su questo sito (BugBusterSite)
+  push:
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  build-and-sync:
     runs-on: ubuntu-latest
     
     permissions:
-      contents: write # Dà il permesso all'azione di fare commit
+      contents: write # Permesso di fare commit sul BugBusterSite
 
     steps:
-      # 1. Fa il "checkout" del codice di BugBusterSite
-      - name: Checkout repo
+      # 1. Scarica il codice di questo sito (BugBusterSite)
+      - name: Checkout website repo
         uses: actions/checkout@v4
 
       # 2. Installa Python
@@ -26,21 +26,18 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
-      # 3. Installa le librerie Python necessarie
+          
+      # 3. Installa la libreria 'requests' (serve allo script Python)
       - name: Install dependencies
         run: pip install requests
 
       # 4. Esegue lo script Python
-      - name: Run Sync Script
-        env:
-          DOCS_PAT: ${{ secrets.DOCS_PAT }} # Inietta il token segreto
+      - name: Run Sync Script (Fetch public docs)
         run: python .github/scripts/sync_verbali.py
 
-      # 5. Fa il commit automatico delle modifiche a index.html
+      # 5. Salva (commit) le modifiche solo se index.html è cambiato
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'CI: Aggiorna lista verbali'
-          # Committa solo se index.html è stato modificato
-          file_pattern: index.html
+          commit_message: 'CI: Aggiorna lista documenti'
+          file_pattern: 'index.html'

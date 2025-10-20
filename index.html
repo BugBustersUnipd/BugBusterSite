@@ -1,110 +1,66 @@
-<!DOCTYPE html>
-<html lang="it">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentazione Progetto Ingegneria del Software</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-    <header>
-        <h1>Documentazione Progetto Ingegneria del Software</h1>
-        <p>Sito per la condivisione dei documenti del progetto con il docente</p>
-    </header>
-
-    <main>
-        <section class="documents-section">
-            <h2>Documenti del Progetto</h2>
-
-            <div class="folder">
-                <div class="folder-header" data-folder="candidatura">
-                    <h3><span class="folder-icon">📁</span> CANDIDATURA PROGETTO</h3>
-                    <span class="toggle-icon">+</span>
-                </div>
-                <div class="folder-content" id="candidatura-content">
-                    <ul>
-                        <li>
-                            <a href="../CANDIDATURA PROGETTO/Candidatura progetto.pdf" target="_blank">
-                                <span class="file-icon">📄</span> Candidatura progetto.pdf
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+<main>
+    <section class="documents-section">
+        <h2>Documenti del Progetto</h2>
+        
+        <div class="folder">
+            <div class="folder-header" data-folder="candidatura">
+                <h3><span class="folder-icon">📁</span> CANDIDATURA PROGETTO</h3>
+                <span class="toggle-icon">+</span>
             </div>
-
-            <div class="folder">
-                <div class="folder-header" data-folder="capitolato">
-                    <h3><span class="folder-icon">📁</span> SCELTA CAPITOLATO</h3>
-                    <span class="toggle-icon">+</span>
+            <div class="folder-content" id="candidatura-content">
+                <p>Nessun documento trovato.</p>
                 </div>
-                <div class="folder-content" id="capitolato-content">
-                    <ul>
-                        <li>
-                            <a href="../SCELTA CAPITOLATO/Scelta capitolato.pdf" target="_blank">
-                                <span class="file-icon">📄</span> Scelta capitolato.pdf
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+        </div>
+        
+        <div class="folder">
+            <div class="folder-header" data-folder="capitolato">
+                <h3><span class="folder-icon">📁</span> SCELTA CAPITOLATO</h3>
+                <span class="toggle-icon">+</span>
             </div>
+            <div class="folder-content" id="capitolato-content">
+                <p>Nessun documento trovato.</p>
+                </div>
+        </div>
 
-            <div class="folder">
-                <div class="folder-header" data-folder="norme">
-                    <h3><span class="folder-icon">📁</span> NORME</h3>
-                    <span class="toggle-icon">+</span>
-                </div>
-                <div class="folder-content" id="norme-content">
-                    <ul>
-                        <li>
-                            <a href="#" target="_blank">
-                                <span class="file-icon">📄</span> Normativa 1.pdf (Esempio)
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" target="_blank">
-                                <span class="file-icon">📄</span> Normativa 2.pdf (Esempio)
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+        <div class="folder">
+            <div class="folder-header" data-folder="norme">
+                <h3><span class="folder-icon">📁</span> NORME</h3>
+                <span class="toggle-icon">+</span>
             </div>
-
-            <div class="folder">
-                <div class="folder-header" data-folder="verbali">
-                    <h3><span class="folder-icon">📁</span> VERBALI</h3>
-                    <span class="toggle-icon">+</span>
+            <div class="folder-content" id="norme-content">
+                <p>Nessun documento trovato.</p>
                 </div>
-
-                <div class="folder-content" id="verbali-content">
-
-                    <div class="subfolder">
-                        <div class="folder-header" data-folder="verbali-interni">
-                            <h4><span class="folder-icon">📁</span> Verbali Interni</h4>
-                            <span class="toggle-icon">+</span>
-                        </div>
-                        <div class="folder-content" id="verbali-interni-content">
-                            <p>Nessun verbale interno trovato.</p>
-                        </div>
+        </div>
+        
+        <div class="folder">
+            <div class="folder-header" data-folder="verbali">
+                <h3><span class="folder-icon">📁</span> VERBALI</h3>
+                <span class="toggle-icon">+</span>
+            </div>
+            
+            <div class="folder-content" id="verbali-content">
+                
+                <div class="subfolder">
+                    <div class="folder-header" data-folder="verbali-interni">
+                        <h4><span class="folder-icon">📁</span> Verbali Interni</h4>
+                        <span class="toggle-icon">+</span>
                     </div>
-
-                    <div class="subfolder">
-                        <div class="folder-header" data-folder="verbali-esterni">
-                            <h4><span class="folder-icon">📁</span> Verbali Esterni</h4>
-                            <span class="toggle-icon">+</span>
+                    <div class="folder-content" id="verbali-interni-content">
+                        <p>Nessun verbale interno trovato.</p>
                         </div>
-                        <div class="folder-content" id="verbali-esterni-content">
-                            <p>Nessun verbale esterno trovato.</p>
-                        </div>
-                    </div>
-
                 </div>
+                
+                <div class="subfolder">
+                    <div class="folder-header" data-folder="verbali-esterni">
+                        <h4><span class="folder-icon">📁</span> Verbali Esterni</h4>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="folder-content" id="verbali-esterni-content">
+                        <p>Nessun verbale esterno trovato.</p>
+                        </div>
+                </div>
+
             </div>
-
-        </section>
-    </main>
-    <script src="script.js"></script>
-</body>
-
-</html>
+        </div>
+    </section>
+</main>
