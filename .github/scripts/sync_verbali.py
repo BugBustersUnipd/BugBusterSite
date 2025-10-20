@@ -6,7 +6,7 @@ import re
 REPO_OWNER = "BugbustersUnipd"
 REPO_NAME = "DocumentazioneSWE"
 MAIN_BRANCH = "main" 
-INDEX_FILE_PATH = "index.html" # Il tuo index.html è nella root
+INDEX_FILE_PATH = "index.html" 
 # --- FINE CONFIGURAZIONE ---
 
 def get_json_from_api(api_url):
@@ -22,7 +22,7 @@ def get_json_from_api(api_url):
 def update_index_file(placeholder_start, placeholder_end, html_content):
     """Legge index.html e sostituisce il placeholder (solo il primo)."""
     if not html_content:
-        html_content = "<p>Nessun documento trovato.</p>" # Messaggio di default
+        html_content = "<p>Nessun documento trovato.</p>" 
 
     try:
         with open(INDEX_FILE_PATH, "r", encoding="utf-8") as f:
@@ -30,10 +30,8 @@ def update_index_file(placeholder_start, placeholder_end, html_content):
 
         pattern = re.compile(f"({re.escape(placeholder_start)})(.*?)({re.escape(placeholder_end)})", re.DOTALL)
         
-        # --- QUESTA È LA LINEA CORRETTA ---
-        # Sostituisce il contenuto tra il gruppo 1 (\1) e il gruppo 3 (\3)
+        # Correzione del SyntaxError:
         replacement_block = f"\\1\n{html_content}\n            \\3"
-        # --- FINE DELLA CORREZIONE ---
 
         if pattern.search(content) is None:
             print(f"ERRORE: Placeholder {placeholder_start} non trovato in {INDEX_FILE_PATH}.")
@@ -50,10 +48,7 @@ def update_index_file(placeholder_start, placeholder_end, html_content):
         print(f"Errore durante l'aggiornamento di {INDEX_FILE_PATH}: {e}")
 
 def process_simple_folder_content(folder_path):
-    """
-    Genera HTML per cartelle semplici (Candidatura, Capitolato, Norme)
-    che contengono direttamente i PDF.
-    """
+    """Genera HTML per cartelle semplici (Candidatura, Capitolato, Norme)."""
     html_output = "<ul>"
     api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{folder_path}?ref={MAIN_BRANCH}"
     
@@ -65,7 +60,7 @@ def process_simple_folder_content(folder_path):
     found_files = False
     for file in files:
         if file.get('type') == 'file' and file.get('name', '').lower().endswith('.pdf'):
-            pdf_link = file.get('download_url') # Link diretto al PDF
+            pdf_link = file.get('download_url') 
             pdf_name = file.get('name')
             html_output += f"""
                         <li>
@@ -80,10 +75,7 @@ def process_simple_folder_content(folder_path):
     return html_output if found_files else ""
 
 def process_nested_folder(folder_path, type_name):
-    """
-    Genera HTML per cartelle complesse (Verbali)
-    che contengono altre cartelle.
-    """
+    """Genera HTML per cartelle complesse (Verbali)."""
     html_output = ""
     api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{folder_path}?ref={MAIN_BRANCH}"
     
@@ -92,7 +84,7 @@ def process_nested_folder(folder_path, type_name):
         print(f"Nessuna cartella trovata o errore API per {folder_path}")
         return ""
 
-    folders.sort(key=lambda x: x.get('name')) # Ordina per nome
+    folders.sort(key=lambda x: x.get('name')) 
 
     for folder in folders:
         if folder.get('type') == 'dir':
