@@ -39,5 +39,7 @@ jobs:
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'CI: Aggiorna lista documenti'
-          file_pattern: 'index.html'
+          commit_message: 'CI: Aggiorna lista documenti e PDF scaricati'
+          file_pattern: '.'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: '41898282+github-actions[bot]@users.noreply.github.com'

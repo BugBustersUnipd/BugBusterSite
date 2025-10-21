@@ -1,12 +1,15 @@
 import os
-import requests 
+import requests
 import re
+import pathlib
+import urllib.parse
 
 # --- CONFIGURAZIONE ---
 REPO_OWNER = "BugbustersUnipd"
 REPO_NAME = "DocumentazioneSWE"
 MAIN_BRANCH = "main" 
 INDEX_FILE_PATH = "index.html" 
+LOCAL_DOCS_DIR = "assets/docs"
 # --- FINE CONFIGURAZIONE ---
 
 def get_json_from_api(api_url):
@@ -62,12 +65,37 @@ def process_simple_folder_content(folder_path):
     found_files = False
     for file in files:
         if file.get('type') == 'file' and file.get('name', '').lower().endswith('.pdf'):
-            pdf_link = file.get('download_url') 
+            pdf_url = file.get('download_url')
             pdf_name = file.get('name')
+
+            # salva il PDF sotto assets/docs/<folder_path>/<nome>
+            safe_folder = folder_path.replace('/', os.path.sep)
+            local_dir = os.path.join(LOCAL_DOCS_DIR, safe_folder)
+            pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
+            local_path = os.path.join(local_dir, pdf_name)
+
+            # Scarica il file solo se non esiste
+            if not os.path.exists(local_path):
+                try:
+                    r = requests.get(pdf_url, stream=True)
+                    r.raise_for_status()
+                    with open(local_path, 'wb') as out_f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                out_f.write(chunk)
+                    print(f"Scaricato: {local_path}")
+                except requests.RequestException as e:
+                    print(f"Errore download {pdf_url}: {e}")
+                    continue
+
+            # href relativo per aprire nel viewer del browser (index.html è nella root)
+            # usiamo URL-encoding per i nomi dei file
+            rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(folder_path), urllib.parse.quote(pdf_name)])
+
             html_output += f"""
                         <li>
-                            <a href="{pdf_link}" target="_blank" rel="noopener noreferrer">
-                                <span class="file-icon">📄</span> {pdf_name}
+                            <a href="{rel_path}" target="_blank" rel="noopener noreferrer">
+                                <span class=\"file-icon\">📄</span> {pdf_name}
                             </a>
                         </li>
 """
@@ -92,7 +120,7 @@ def process_nested_folder(folder_path, type_name):
         if folder.get('type') == 'dir':
             folder_name = folder.get('name')
             folder_api_url = folder.get('url')
-            
+
             files = get_json_from_api(folder_api_url)
             if not files or not isinstance(files, list):
                 continue
@@ -101,30 +129,37 @@ def process_nested_folder(folder_path, type_name):
             pdf_name = None
             for file in files:
                 if file.get('type') == 'file' and file.get('name', '').lower().endswith('.pdf'):
-                    pdf_link = file.get('download_url') 
+                    pdf_link = file.get('download_url')
                     pdf_name = file.get('name')
-                    break 
-            
-            if pdf_link:
+                    break
+
+            if pdf_link and pdf_name:
+                # crea id per aria/JS
                 data_folder_id = f"verbale-{type_name.lower()}-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
 
+                # salva localmente nello stesso schema di cartelle
+                safe_subfolder = os.path.join(folder_path, folder_name)
+                local_dir = os.path.join(LOCAL_DOCS_DIR, safe_subfolder)
+                pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
+                local_path = os.path.join(local_dir, pdf_name)
+
+                if not os.path.exists(local_path):
+                    try:
+                        r = requests.get(pdf_link, stream=True)
+                        r.raise_for_status()
+                        with open(local_path, 'wb') as out_f:
+                            for chunk in r.iter_content(chunk_size=8192):
+                                if chunk:
+                                    out_f.write(chunk)
+                        print(f"Scaricato: {local_path}")
+                    except requests.RequestException as e:
+                        print(f"Errore download {pdf_link}: {e}")
+                        continue
+
+                rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(folder_path), urllib.parse.quote(folder_name), urllib.parse.quote(pdf_name)])
+
                 html_output += f"""
-                        <div class="subfolder">
-                            <div class="folder-header" data-folder="{data_folder_id}">
-                                <h4><span class="folder-icon">📁</span> {folder_name}</h4>
-                                <span class="toggle-icon">+</span>
-                            </div>
-                            <div class="folder-content" id="{data_folder_id}-content">
-                                <ul>
-                                    <li>
-                                        <a href="{pdf_link}" target="_blank" rel="noopener noreferrer">
-                                            <span class="file-icon">📄</span> {pdf_name}
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-"""
+                        <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {folder_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""
     return html_output
 
 def main():

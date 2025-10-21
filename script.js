@@ -57,4 +57,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize: collapse all folders on load
     folderHeaders.forEach(h => setCollapsedState(h, true));
+
+    // Intercept clicks on PDF links and open them in the in-site viewer
+    // This avoids the browser 'download' behavior when possible by fetching
+    // the PDF and opening it via a blob URL inside `viewer.html`.
+    function isPdfLink(href) {
+        if (!href) return false;
+        return href.toLowerCase().endsWith('.pdf');
+    }
+
+    document.querySelectorAll('a').forEach(a => {
+        try {
+            const href = a.getAttribute('href');
+            if (isPdfLink(href)) {
+                a.addEventListener('click', function (e) {
+                    // let modifier keys open in new tab as usual
+                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    // Navigate to our viewer page with the original URL encoded
+                    const viewerUrl = `viewer.html?url=${encodeURIComponent(href)}`;
+                    // Open in same tab so user sees the PDF viewer automatically
+                    window.location.href = viewerUrl;
+                });
+            }
+        } catch (err) {
+            // ignore malformed hrefs
+        }
+    });
 });
