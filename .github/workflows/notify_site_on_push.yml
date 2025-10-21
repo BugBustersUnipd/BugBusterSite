@@ -1,0 +1,21 @@
+name: Notify Site Repo on Push
+
+# Questo workflow è un esempio da inserire nella repo DocumentazioneSWE
+# (/.github/workflows/notify_site_on_push.yml) — invia un repository_dispatch
+# al repo BugBusterSite per attivare il workflow di sincronizzazione.
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send repository_dispatch to BugBusterSite
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.BUGBUSTER_DISPATCH_TOKEN }}
+          repository: BugbustersUnipd/BugBusterSite
+          event-type: doc-updated
+          client-payload: '{"ref":"${{ github.ref }}","sha":"${{ github.sha }}"}'
