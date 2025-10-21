@@ -9,6 +9,11 @@ on:
     branches:
       - main
 
+  # Permette a un'altra repository (es. DocumentazioneSWE) di scatenare la sincronizzazione
+  # usando repository_dispatch con event_type: 'documentazione_swe_push'
+  repository_dispatch:
+    types: [documentazione_swe_push]
+
 jobs:
   build-and-sync:
     runs-on: ubuntu-latest
