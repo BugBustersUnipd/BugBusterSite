@@ -58,30 +58,30 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize: collapse all folders on load
     folderHeaders.forEach(h => setCollapsedState(h, true));
 
-    // Intercept clicks on PDF links and open them in the in-site viewer
-    // This avoids the browser 'download' behavior when possible by fetching
-    // the PDF and opening it via a blob URL inside `viewer.html`.
-    function isPdfLink(href) {
-        if (!href) return false;
-        return href.toLowerCase().endsWith('.pdf');
+    // Fix broken links to assets/docs when the site is served from a different Pages source
+    // If a relative assets/docs/... link returns 404, replace it with the raw.githubusercontent.com URL
+    function fixBrokenDocLinks() {
+        const owner = 'BugbustersUnipd';
+        const repo = 'BugBusterSite';
+        const branch = 'main';
+
+        const anchors = Array.from(document.querySelectorAll('a[href^="assets/docs/"]'));
+        anchors.forEach(a => {
+            const href = a.getAttribute('href');
+            // Try a HEAD request to check existence
+            fetch(href, { method: 'HEAD' }).then(res => {
+                if (!res.ok) {
+                    // fallback to raw.githubusercontent.com
+                    const raw = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + encodeURI(href);
+                    a.setAttribute('href', raw);
+                }
+            }).catch(() => {
+                // on network error, also fallback
+                const raw = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + encodeURI(href);
+                a.setAttribute('href', raw);
+            });
+        });
     }
 
-    document.querySelectorAll('a').forEach(a => {
-        try {
-            const href = a.getAttribute('href');
-            if (isPdfLink(href)) {
-                a.addEventListener('click', function (e) {
-                    // let modifier keys open in new tab as usual
-                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-                    e.preventDefault();
-                    // Navigate to our viewer page with the original URL encoded
-                    const viewerUrl = `viewer.html?url=${encodeURIComponent(href)}`;
-                    // Open in same tab so user sees the PDF viewer automatically
-                    window.location.href = viewerUrl;
-                });
-            }
-        } catch (err) {
-            // ignore malformed hrefs
-        }
-    });
+    fixBrokenDocLinks();
 });
