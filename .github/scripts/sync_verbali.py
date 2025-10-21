@@ -68,11 +68,17 @@ def process_simple_folder_content(folder_path):
             pdf_url = file.get('download_url')
             pdf_name = file.get('name')
 
-            # salva il PDF sotto assets/docs/<folder_path>/<nome>
-            safe_folder = folder_path.replace('/', os.path.sep)
+            # salva il PDF sotto assets/docs/<sanitized_folder>/<sanitized_name>
+            def slugify(name):
+                # sostituisce spazi e caratteri non alfanumerici con underscore
+                s = re.sub(r"[^A-Za-z0-9.]+", '_', name)
+                return s.strip('_')
+
+            safe_folder = slugify(folder_path)
+            safe_name = slugify(pdf_name)
             local_dir = os.path.join(LOCAL_DOCS_DIR, safe_folder)
             pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
-            local_path = os.path.join(local_dir, pdf_name)
+            local_path = os.path.join(local_dir, safe_name)
 
             # Scarica il file solo se non esiste
             if not os.path.exists(local_path):
@@ -89,8 +95,7 @@ def process_simple_folder_content(folder_path):
                     continue
 
             # href relativo per aprire nel viewer del browser (index.html è nella root)
-            # usiamo URL-encoding per i nomi dei file
-            rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(folder_path), urllib.parse.quote(pdf_name)])
+            rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(safe_folder), urllib.parse.quote(safe_name)])
 
             html_output += f"""
                         <li>
@@ -137,11 +142,17 @@ def process_nested_folder(folder_path, type_name):
                 # crea id per aria/JS
                 data_folder_id = f"verbale-{type_name.lower()}-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
 
-                # salva localmente nello stesso schema di cartelle
-                safe_subfolder = os.path.join(folder_path, folder_name)
-                local_dir = os.path.join(LOCAL_DOCS_DIR, safe_subfolder)
+                # salva localmente in una struttura sanificata
+                def slugify(name):
+                    return re.sub(r"[^A-Za-z0-9.]+", '_', name).strip('_')
+
+                safe_folder = slugify(folder_path)
+                safe_folder_name = slugify(folder_name)
+                safe_name = slugify(pdf_name)
+
+                local_dir = os.path.join(LOCAL_DOCS_DIR, safe_folder, safe_folder_name)
                 pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
-                local_path = os.path.join(local_dir, pdf_name)
+                local_path = os.path.join(local_dir, safe_name)
 
                 if not os.path.exists(local_path):
                     try:
@@ -156,7 +167,7 @@ def process_nested_folder(folder_path, type_name):
                         print(f"Errore download {pdf_link}: {e}")
                         continue
 
-                rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(folder_path), urllib.parse.quote(folder_name), urllib.parse.quote(pdf_name)])
+                rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(safe_folder), urllib.parse.quote(safe_folder_name), urllib.parse.quote(safe_name)])
 
                 html_output += f"""
                         <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {folder_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""

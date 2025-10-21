@@ -57,31 +57,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize: collapse all folders on load
     folderHeaders.forEach(h => setCollapsedState(h, true));
-
-    // Fix broken links to assets/docs when the site is served from a different Pages source
-    // If a relative assets/docs/... link returns 404, replace it with the raw.githubusercontent.com URL
-    function fixBrokenDocLinks() {
-        const owner = 'BugbustersUnipd';
-        const repo = 'BugBusterSite';
-        const branch = 'main';
-
-        const anchors = Array.from(document.querySelectorAll('a[href^="assets/docs/"]'));
-        anchors.forEach(a => {
-            const href = a.getAttribute('href');
-            // Try a HEAD request to check existence
-            fetch(href, { method: 'HEAD' }).then(res => {
-                if (!res.ok) {
-                    // fallback to raw.githubusercontent.com
-                    const raw = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + encodeURI(href);
-                    a.setAttribute('href', raw);
-                }
-            }).catch(() => {
-                // on network error, also fallback
-                const raw = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + encodeURI(href);
-                a.setAttribute('href', raw);
-            });
-        });
-    }
-
-    fixBrokenDocLinks();
+    
 });
