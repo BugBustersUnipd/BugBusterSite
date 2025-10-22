@@ -3,6 +3,7 @@ import requests
 import re
 import pathlib
 import urllib.parse
+import json
 
 # --- CONFIGURAZIONE ---
 REPO_OWNER = "BugbustersUnipd"
@@ -10,6 +11,7 @@ REPO_NAME = "DocumentazioneSWE"
 MAIN_BRANCH = "main" 
 INDEX_FILE_PATH = "index.html" 
 LOCAL_DOCS_DIR = "assets/docs"
+METADATA_FILE = os.path.join(LOCAL_DOCS_DIR, '.sync_meta.json')
 # --- FINE CONFIGURAZIONE ---
 
 def get_json_from_api(api_url):
@@ -21,6 +23,25 @@ def get_json_from_api(api_url):
     except requests.RequestException as e:
         print(f"Errore API per {api_url}: {e}")
         return None
+
+
+def load_meta():
+    try:
+        if os.path.exists(METADATA_FILE):
+            with open(METADATA_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def save_meta(meta):
+    try:
+        pathlib.Path(LOCAL_DOCS_DIR).mkdir(parents=True, exist_ok=True)
+        with open(METADATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(meta, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Errore salvataggio metadata: {e}")
 
 def update_index_file(placeholder_start, placeholder_end, html_content):
     """Sostituisce il blocco compreso tra placeholder_start e placeholder_end in INDEX_FILE_PATH.
@@ -63,10 +84,12 @@ def process_simple_folder_content(folder_path):
         return "" 
 
     found_files = False
+    meta = load_meta()
     for file in files:
         if file.get('type') == 'file' and file.get('name', '').lower().endswith('.pdf'):
             pdf_url = file.get('download_url')
             pdf_name = file.get('name')
+            file_sha = file.get('sha')
 
             # salva il PDF sotto assets/docs/<sanitized_folder>/<sanitized_name>
             def slugify(name):
@@ -80,8 +103,13 @@ def process_simple_folder_content(folder_path):
             pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
             local_path = os.path.join(local_dir, safe_name)
 
-            # Scarica il file solo se non esiste
-            if not os.path.exists(local_path):
+            # Scarica o aggiorna il file se la sha remota è cambiata
+            meta_key = '/'.join([folder_path, pdf_name])
+            need_download = True
+            if os.path.exists(local_path) and meta.get(meta_key) == file_sha:
+                need_download = False
+
+            if need_download:
                 try:
                     r = requests.get(pdf_url, stream=True)
                     r.raise_for_status()
@@ -89,7 +117,8 @@ def process_simple_folder_content(folder_path):
                         for chunk in r.iter_content(chunk_size=8192):
                             if chunk:
                                 out_f.write(chunk)
-                    print(f"Scaricato: {local_path}")
+                    print(f"Scaricato/aggiornato: {local_path}")
+                    meta[meta_key] = file_sha
                 except requests.RequestException as e:
                     print(f"Errore download {pdf_url}: {e}")
                     continue
@@ -104,7 +133,9 @@ def process_simple_folder_content(folder_path):
                             </a>
                         </li>
 """
-            found_files = True
+        found_files = True
+    # save metadata after processing folder
+    save_meta(meta)
     
     html_output += "</ul>"
     return html_output if found_files else ""
@@ -136,6 +167,7 @@ def process_nested_folder(folder_path, type_name):
                 if file.get('type') == 'file' and file.get('name', '').lower().endswith('.pdf'):
                     pdf_link = file.get('download_url')
                     pdf_name = file.get('name')
+                    file_sha = file.get('sha')
                     break
 
             if pdf_link and pdf_name:
@@ -154,7 +186,14 @@ def process_nested_folder(folder_path, type_name):
                 pathlib.Path(local_dir).mkdir(parents=True, exist_ok=True)
                 local_path = os.path.join(local_dir, safe_name)
 
-                if not os.path.exists(local_path):
+                # decide se scaricare o aggiornare basandosi sulla sha
+                meta = load_meta()
+                meta_key = '/'.join([folder_path, folder_name, pdf_name])
+                need_download = True
+                if os.path.exists(local_path) and meta.get(meta_key) == file_sha:
+                    need_download = False
+
+                if need_download:
                     try:
                         r = requests.get(pdf_link, stream=True)
                         r.raise_for_status()
@@ -162,7 +201,9 @@ def process_nested_folder(folder_path, type_name):
                             for chunk in r.iter_content(chunk_size=8192):
                                 if chunk:
                                     out_f.write(chunk)
-                        print(f"Scaricato: {local_path}")
+                        print(f"Scaricato/aggiornato: {local_path}")
+                        meta[meta_key] = file_sha
+                        save_meta(meta)
                     except requests.RequestException as e:
                         print(f"Errore download {pdf_link}: {e}")
                         continue
