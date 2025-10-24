@@ -13,23 +13,69 @@ body {
 }
 
 header {
-    background-color: #2c3e50;
+    background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%);
     color: white;
-    padding: 30px;
-    text-align: center;
+    padding: 18px 20px;
     border-radius: 8px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+}
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
-header h1 {
-    font-size: 2.2rem;
-    margin-bottom: 10px;
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-header p {
-    font-size: 1.1rem;
+.logo {
+    width: 64px;
+    height: 64px;
+    display: block;
+}
+
+.brand-text h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    line-height: 1.05;
+}
+
+.brand-text p {
+    margin: 2px 0 0 0;
+    font-size: 0.9rem;
     opacity: 0.9;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.github-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    background: rgba(255,255,255,0.06);
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.18s ease, transform 0.08s ease;
+}
+
+.github-btn:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateY(-1px);
 }
 
 main {
@@ -47,10 +93,11 @@ main {
 
 .folder {
     background-color: white;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 24px rgba(2,6,23,0.06);
     overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.04);
 }
 
 .folder-header {
@@ -167,11 +214,11 @@ footer {
     }
     
     header {
-        padding: 20px;
+        padding: 14px;
     }
     
     header h1 {
-        font-size: 1.8rem;
+        font-size: 1rem;
     }
     
     .folder-header, .subfolder .folder-header {
