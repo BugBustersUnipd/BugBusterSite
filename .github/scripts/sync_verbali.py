@@ -4,6 +4,7 @@ import re
 import pathlib
 import urllib.parse
 import json
+import datetime
 
 # --- CONFIGURAZIONE ---
 REPO_OWNER = "BugbustersUnipd"
@@ -119,6 +120,11 @@ def process_simple_folder_content(folder_path):
                                 out_f.write(chunk)
                     print(f"Scaricato/aggiornato: {local_path}")
                     meta[meta_key] = file_sha
+                    # salva timestamp di aggiornamento
+                    try:
+                        meta[meta_key + '::updated_at'] = datetime.datetime.utcnow().isoformat()
+                    except Exception:
+                        meta[meta_key + '::updated_at'] = ''
                 except requests.RequestException as e:
                     print(f"Errore download {pdf_url}: {e}")
                     continue
@@ -136,7 +142,25 @@ def process_simple_folder_content(folder_path):
         found_files = True
     # save metadata after processing folder
     save_meta(meta)
-    
+    # compute last updated timestamp for this folder (if available)
+    last_times = []
+    for k in meta.keys():
+        if k.startswith(folder_path + '/'):
+            t = meta.get(k + '::updated_at')
+            if t:
+                last_times.append(t)
+
+    if last_times:
+        try:
+            last_iso = max(last_times)
+            last_dt = datetime.datetime.fromisoformat(last_iso)
+            # format in modo leggibile
+            last_str = last_dt.strftime('%d %b %Y %H:%M UTC')
+            # prepend a small notice
+            html_output = f'<p class="last-updated">Ultimo aggiornamento: {last_str}</p>\n' + html_output
+        except Exception:
+            pass
+
     html_output += "</ul>"
     return html_output if found_files else ""
 
@@ -152,6 +176,7 @@ def process_nested_folder(folder_path, type_name):
 
     folders.sort(key=lambda x: x.get('name')) 
 
+    meta = load_meta()
     for folder in folders:
         if folder.get('type') == 'dir':
             folder_name = folder.get('name')
@@ -203,6 +228,10 @@ def process_nested_folder(folder_path, type_name):
                                     out_f.write(chunk)
                         print(f"Scaricato/aggiornato: {local_path}")
                         meta[meta_key] = file_sha
+                        try:
+                            meta[meta_key + '::updated_at'] = datetime.datetime.utcnow().isoformat()
+                        except Exception:
+                            meta[meta_key + '::updated_at'] = ''
                         save_meta(meta)
                     except requests.RequestException as e:
                         print(f"Errore download {pdf_link}: {e}")
@@ -213,6 +242,8 @@ def process_nested_folder(folder_path, type_name):
                 html_output += f"""
                         <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {folder_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""
     return html_output
+
+    # (note: caller may save meta)
 
 def main():
     print("Avvio sincronizzazione documenti...")
@@ -228,6 +259,18 @@ def main():
     # 3. Processa Norme (cartella corretta: NORME DI PROGETTO)
     norme_html = process_simple_folder_content("NORME DI PROGETTO")
     update_index_file("<!-- START_NORME -->", "<!-- END_NORME -->", norme_html)
+
+    # 3.1 Processa Diario di bordo
+    diario_html = process_simple_folder_content("DIARIO DI BORDO")
+    update_index_file("<!-- START_DIARIO -->", "<!-- END_DIARIO -->", diario_html)
+
+    # 3.2 Processa Dichiarazione impegni
+    dichiarazione_html = process_simple_folder_content("DICHIARAZIONE IMPEGNI")
+    update_index_file("<!-- START_DICHIARAZIONE -->", "<!-- END_DICHIARAZIONE -->", dichiarazione_html)
+
+    # 3.3 Processa Glossario
+    glossario_html = process_simple_folder_content("GLOSSARIO")
+    update_index_file("<!-- START_GLOSSARIO -->", "<!-- END_GLOSSARIO -->", glossario_html)
 
     # 4. Processa Verbali Interni
     interni_html = process_nested_folder("VERBALI/Interni", "Interni")
