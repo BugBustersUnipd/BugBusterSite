@@ -208,12 +208,6 @@ footer {
     font-size: 0.9rem;
 }
 
-.last-updated {
-    font-size: 0.85rem;
-    color: rgba(0,0,0,0.55);
-    margin-bottom: 8px;
-    font-style: italic;
-}
 
 @media (max-width: 768px) {
     body {

@@ -74,7 +74,7 @@ def update_index_file(placeholder_start, placeholder_end, html_content):
     except Exception as e:
         print(f"Errore durante l'aggiornamento di {INDEX_FILE_PATH}: {e}")
 
-def process_simple_folder_content(folder_path):
+def process_simple_folder_content(folder_path, sort_desc=False):
     """Genera HTML per cartelle semplici (Candidatura, Capitolato, Norme)."""
     html_output = "<ul>"
     api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{folder_path}?ref={MAIN_BRANCH}"
@@ -83,6 +83,24 @@ def process_simple_folder_content(folder_path):
     if not files or not isinstance(files, list):
         print(f"Nessun file trovato o errore API per {folder_path}")
         return "" 
+    # optionally sort files by name in reverse natural (numeric-aware) order
+    def natural_key(name):
+        # Split into numeric and non-numeric chunks
+        parts = re.findall(r"\d+|\D+", name)
+        key = []
+        for p in parts:
+            if p.isdigit():
+                key.append(int(p))
+            else:
+                key.append(p.lower())
+        return key
+
+    if sort_desc:
+        try:
+            files.sort(key=lambda f: natural_key(f.get('name', '')) , reverse=True)
+        except Exception:
+            # fallback to simple reverse by name
+            files.sort(key=lambda f: f.get('name', ''), reverse=True)
 
     found_files = False
     meta = load_meta()
@@ -142,25 +160,6 @@ def process_simple_folder_content(folder_path):
         found_files = True
     # save metadata after processing folder
     save_meta(meta)
-    # compute last updated timestamp for this folder (if available)
-    last_times = []
-    for k in meta.keys():
-        if k.startswith(folder_path + '/'):
-            t = meta.get(k + '::updated_at')
-            if t:
-                last_times.append(t)
-
-    if last_times:
-        try:
-            last_iso = max(last_times)
-            last_dt = datetime.datetime.fromisoformat(last_iso)
-            # format in modo leggibile
-            last_str = last_dt.strftime('%d %b %Y %H:%M UTC')
-            # prepend a small notice
-            html_output = f'<p class="last-updated">Ultimo aggiornamento: {last_str}</p>\n' + html_output
-        except Exception:
-            pass
-
     html_output += "</ul>"
     return html_output if found_files else ""
 
