@@ -195,17 +195,19 @@ def process_nested_folder(folder_path, type_name):
                     break
 
             if pdf_link and pdf_name:
-                # CORREZIONE: Crea display name più leggibile
+                # CORREZIONE: Mappatura basata sui nomi reali delle cartelle
                 display_name = folder_name
-                # Sostituisce underscore con trattini e migliora la formattazione
-                display_name = display_name.replace('_', '-')
-                # Aggiusta i nomi specifici per i verbali esterni
-                if "VE_24_10_2025_M31" in folder_name:
+                
+                # Mappatura specifica per i verbali esterni con i nomi reali
+                if "VE 24-10-2025 [M31]" in folder_name:
                     display_name = "VE_24-10-2025 [M31]"
-                elif "VE_22_10_2025_Miriade" in folder_name:
+                elif "VE 22 10 2025 [Miriade]" in folder_name:
                     display_name = "VE_22-10-2025 [Miriade]"
-                elif "VE_24_10_25_EggOn" in folder_name:
-                    display_name = "VE_24-10-25[EggOn]"
+                elif "VE 24-10-25[EggOn]" in folder_name:
+                    display_name = "VE_24-10-25 [EggOn]"
+                else:
+                    # Per altri casi, usa il nome originale ma migliora la formattazione
+                    display_name = folder_name.replace(' ', '_')
 
                 # crea id per aria/JS
                 data_folder_id = f"verbale-{type_name.lower()}-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
