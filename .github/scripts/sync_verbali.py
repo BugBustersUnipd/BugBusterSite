@@ -195,20 +195,6 @@ def process_nested_folder(folder_path, type_name):
                     break
 
             if pdf_link and pdf_name:
-                # CORREZIONE: Mappatura basata sui nomi esatti delle cartelle
-                display_name = folder_name
-                
-                # Mappatura specifica per i verbali esterni con i nomi reali
-                if "VE_24-10-2025 [M31]" in folder_name:
-                    display_name = "VE_24-10-2025 [M31]"
-                elif "VE_22_10_2025 [Miriade]" in folder_name:
-                    display_name = "VE_22-10-2025 [Miriade]"
-                elif "VE_24-10-25[EggOn]" in folder_name:
-                    display_name = "VE_24-10-25[EggOn]"
-                else:
-                    # Per altri casi, usa il nome originale
-                    display_name = folder_name
-
                 # crea id per aria/JS
                 data_folder_id = f"verbale-{type_name.lower()}-{re.sub(r'[^a-z0-9]+', '-', folder_name.lower())}"
 
@@ -253,8 +239,10 @@ def process_nested_folder(folder_path, type_name):
                 rel_path = '/'.join([LOCAL_DOCS_DIR.replace('\\', '/'), urllib.parse.quote(safe_folder), urllib.parse.quote(safe_folder_name), urllib.parse.quote(safe_name)])
 
                 html_output += f"""
-                        <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {display_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""
+                        <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {folder_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""
     return html_output
+
+    # (note: caller may save meta)
 
 def main():
     print("Avvio sincronizzazione documenti...")
