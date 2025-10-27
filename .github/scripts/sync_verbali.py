@@ -254,8 +254,6 @@ def process_nested_folder(folder_path, type_name):
                         <div class=\"subfolder\">\n                            <div class=\"folder-header\" data-folder=\"{data_folder_id}\">\n                                <h4><span class=\"folder-icon\">📁</span> {display_name}</h4>\n                                <span class=\"toggle-icon\">+</span>\n                            </div>\n                            <div class=\"folder-content\" id=\"{data_folder_id}-content\">\n                                <ul>\n                                    <li>\n                                        <a href=\"{rel_path}\" target=\"_blank\" rel=\"noopener noreferrer\">\n                                            <span class=\"file-icon\">📄</span> {pdf_name}\n                                        </a>\n                                    </li>\n                                </ul>\n                            </div>\n                        </div>\n"""
     return html_output
 
-    # (note: caller may save meta)
-
 def main():
     print("Avvio sincronizzazione documenti...")
 
@@ -295,4 +293,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-[file content end]
