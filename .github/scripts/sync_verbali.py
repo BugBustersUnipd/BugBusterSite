@@ -7,7 +7,7 @@ import json
 import datetime
 
 # --- CONFIGURAZIONE ---
-REPO_OWNER = "BugbustersUnipd"
+REPO_OWNER = "BugBustersUnipd"
 REPO_NAME = "DocumentazioneSWE"
 MAIN_BRANCH = "main" 
 INDEX_FILE_PATH = "index.html" 
